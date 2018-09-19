@@ -1,0 +1,862 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "version" : "1.0.0",
+    "title" : "Obsr"
+  },
+  "tags" : [ {
+    "name" : "user",
+    "description" : "회원가입/ 로그인"
+  }, {
+    "name" : "setting",
+    "description" : "설정 화면 (설정 조회, 스마트폰 서버 전송YN, 사진 찍리 알림YN)"
+  }, {
+    "name" : "photo",
+    "description" : "하늘사진전송"
+  }, {
+    "name" : "weatherStation",
+    "description" : "weatherStation (목록 조회, 상세, 삭제 , 수정)"
+  } ],
+  "paths" : {
+    "/version" : {
+      "post" : {
+        "tags" : [ "version" ],
+        "summary" : "버전 확인",
+        "description" : "버전 확인 업데이트 알림 또는 강업 앱의 버전이 minimumVersion 보다 작다면 강업을 시도 할 것이다 latestVersion 와 minimumVersion 사이에 있다면 업데이트 권유 다이얼로그를 보여줄 것이다.",
+        "operationId" : "version",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "description" : "Version object",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/Version"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          },
+          "400" : {
+            "description" : "버전체크 실패",
+            "schema" : {
+              "$ref" : "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/signup" : {
+      "post" : {
+        "tags" : [ "user" ],
+        "summary" : "Create user",
+        "description" : "회원 가입 요청",
+        "operationId" : "createUser",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "description" : "SignUp User object",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/SignUpUser"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "성공시 User 객체를 받는다.",
+            "schema" : {
+              "$ref" : "#/definitions/User"
+            }
+          },
+          "409" : {
+            "description" : "회원 가입 실패 처리는 displayMessage 를 내려주면 앱에서 Dialog 로 사용자에게노출 - 이미 존재하는 id, - 비빌번호가 일치하지 않습니다. 등등...",
+            "schema" : {
+              "$ref" : "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/signin" : {
+      "post" : {
+        "tags" : [ "user" ],
+        "summary" : "회원 로그인",
+        "operationId" : "loginUser",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "description" : "SignIn User object",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/SignInUser"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "성공시 User 객체를 받는다.",
+            "schema" : {
+              "$ref" : "#/definitions/User"
+            }
+          },
+          "400" : {
+            "description" : "Invalid username/password supplied",
+            "schema" : {
+              "$ref" : "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/find/id" : {
+      "post" : {
+        "tags" : [ "user" ],
+        "summary" : "아이디 찾기",
+        "operationId" : "findId",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "description" : "List of user object",
+          "required" : true,
+          "schema" : {
+            "properties" : {
+              "username" : {
+                "type" : "string",
+                "example" : "윌리암"
+              },
+              "birthday" : {
+                "type" : "string",
+                "example" : "1970-12-12"
+              },
+              "gender" : {
+                "type" : "string",
+                "example" : "female"
+              }
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "성공시 id를 확인할 수 있다.",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "properties" : {
+                  "id" : {
+                    "type" : "string",
+                    "example" : "test@gmail.com"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "해당 번호로 가입된 id가 없습니다.",
+            "schema" : {
+              "$ref" : "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/find/pw" : {
+      "post" : {
+        "tags" : [ "user" ],
+        "summary" : "비밀번호 찾기 - 메일로 임시 비번 발송",
+        "operationId" : "findPw",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "description" : "List of user object",
+          "required" : true,
+          "schema" : {
+            "type" : "object",
+            "properties" : {
+              "id" : {
+                "type" : "string",
+                "example" : "test@gmail.com"
+              }
+            }
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          },
+          "400" : {
+            "description" : "가입된 id(email)이 없습니다.",
+            "schema" : {
+              "$ref" : "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/logout" : {
+      "post" : {
+        "tags" : [ "user" ],
+        "summary" : "header 에 access_token 을 넣어 요청 - 서버는 해당토큰은 만료시킨다. - 해당 사용자의 push 토큰을 삭제",
+        "operationId" : "logoutUser",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "name" : "access_token",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/user/push" : {
+      "post" : {
+        "tags" : [ "user" ],
+        "summary" : "push 토큰 등록",
+        "operationId" : "pushRegister",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "name" : "access_token",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "description" : "push object",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/push"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation"
+          },
+          "400" : {
+            "description" : "Invalid username supplied"
+          },
+          "404" : {
+            "description" : "User not found"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "user" ],
+        "summary" : "Push토큰삭제",
+        "description" : "Push토큰삭제",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "name" : "access_token",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "description" : "Edit weatherStation Object",
+          "required" : true,
+          "schema" : {
+            "properties" : {
+              "device_id" : {
+                "type" : "string"
+              }
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "setting" ],
+        "summary" : "Push 동의 갱신",
+        "description" : "Push 동의 갱신.",
+        "operationId" : "setting",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "name" : "access_token",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "description" : "Created user object",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PushAgree"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/photo" : {
+      "post" : {
+        "tags" : [ "photo" ],
+        "summary" : "사진 데이터 전송",
+        "description" : "사용자가 촬영한 사진과 사용자정보, 위,경도, 기압, 고도 정보를 함께 전송한다.",
+        "operationId" : "photo",
+        "consumes" : [ "multipart/form-data" ],
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "name" : "access_token",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "file",
+          "in" : "formData",
+          "description" : "file to upload",
+          "required" : true,
+          "type" : "file"
+        }, {
+          "name" : "latitude",
+          "in" : "formData",
+          "description" : "위도 Long type",
+          "required" : true,
+          "type" : "number"
+        }, {
+          "name" : "longitude",
+          "in" : "formData",
+          "description" : "경도 Long type",
+          "required" : true,
+          "type" : "number"
+        }, {
+          "name" : "atmosphericPressure",
+          "in" : "formData",
+          "description" : "기압 Long type",
+          "required" : true,
+          "type" : "number"
+        }, {
+          "name" : "azimuth",
+          "in" : "formData",
+          "description" : "방위 Long type",
+          "required" : true,
+          "type" : "number"
+        }, {
+          "name" : "altitude",
+          "in" : "formData",
+          "description" : "고도 Long type",
+          "required" : true,
+          "type" : "number"
+        }, {
+          "name" : "date",
+          "in" : "formData",
+          "description" : "등록시간 \"YYYY-MM-dd HH:mm:ss\"",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          },
+          "400" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/weather/device" : {
+      "post" : {
+        "tags" : [ "weather device" ],
+        "summary" : "장치의 날씨 정보 전송",
+        "description" : "날씨 데이터 전송",
+        "operationId" : "weather_data",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "type",
+          "required" : true,
+          "description" : "101(obd2), 102(웨더스테이션)",
+          "type" : "integer"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "description" : "",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/WeatherDeviceData"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          },
+          "400" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/weatherStation" : {
+      "post" : {
+        "tags" : [ "weatherStation" ],
+        "summary" : "weatherStation 등록",
+        "description" : "새로운 weatherStation을 등록한다.",
+        "operationId" : "weatherStation",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "name" : "access_token",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "description" : "Created weatherStation Object",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/WeatherStationRegistration"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          },
+          "400" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "weatherStation" ],
+        "summary" : "weatherStation 수정",
+        "description" : "weatherStation을 수정한다",
+        "operationId" : "weatherStation_edit",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "name" : "access_token",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "description" : "Edit weatherStation Object",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/WeatherStationRegistration"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          },
+          "400" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "weatherStation" ],
+        "summary" : "weatherStation 삭제",
+        "description" : "weatherStation을 수정한다",
+        "operationId" : "weatherStation_delete",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "name" : "access_token",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "description" : "Edit weatherStation Object",
+          "required" : true,
+          "schema" : {
+            "properties" : {
+              "idx" : {
+                "type" : "string"
+              },
+              "macAddress" : {
+                "type" : "boolean"
+              }
+            }
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          },
+          "400" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/weatherStation/list" : {
+      "get" : {
+        "tags" : [ "weatherStation" ],
+        "summary" : "weatherStation 리스트",
+        "description" : "weatherStation의 리스트를 가져온다.",
+        "operationId" : "weatherStation_list",
+        "produces" : [ "application/json", "application/xml" ],
+        "parameters" : [ {
+          "name" : "access_token",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "성공시 WeatherStation 객체를 Array 로받는다.",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/WeatherStation"
+              }
+            }
+          },
+          "204" : {
+            "description" : "No Content 더이상 불러올 데이터가 없음."
+          },
+          "400" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions" : {
+    "petstore_auth" : {
+      "type" : "oauth2",
+      "authorizationUrl" : "http://petstore.swagger.io/oauth/dialog",
+      "flow" : "implicit",
+      "scopes" : {
+        "write:pets" : "modify pets in your account",
+        "read:pets" : "read your pets"
+      }
+    },
+    "api_key" : {
+      "type" : "apiKey",
+      "name" : "api_key",
+      "in" : "header"
+    }
+  },
+  "definitions" : {
+    "Version" : {
+      "type" : "object",
+      "properties" : {
+        "latestVersion" : {
+          "type" : "string",
+          "example" : "6.11.1"
+        },
+        "minimumVersion" : {
+          "type" : "string",
+          "example" : "6.10.3"
+        }
+      }
+    },
+    "PushAgree" : {
+      "type" : "object",
+      "properties" : {
+        "dataTransferAgreement" : {
+          "type" : "boolean",
+          "example" : true
+        },
+        "photoPushAgreement" : {
+          "type" : "boolean",
+          "example" : true
+        }
+      },
+      "xml" : {
+        "name" : "PushAgree"
+      }
+    },
+    "push" : {
+      "type" : "object",
+      "properties" : {
+        "push_token" : {
+          "type" : "string",
+          "example" : "dasdfsdf%asdf2~"
+        },
+        "device_os" : {
+          "type" : "string",
+          "example" : "android"
+        },
+        "device_id" : {
+          "type" : "string",
+          "example" : "1231234!"
+        },
+        "dataTransferAgreement" : {
+          "type" : "boolean"
+        },
+        "photoPushAgreement" : {
+          "type" : "boolean"
+        }
+      },
+      "xml" : {
+        "name" : "push"
+      }
+    },
+    "SignInUser" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "string",
+          "example" : "andrew@gmail.com"
+        },
+        "passwd" : {
+          "type" : "string",
+          "example" : "1231234!"
+        }
+      },
+      "xml" : {
+        "name" : "SignInUser"
+      }
+    },
+    "SignUpUser" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "string",
+          "example" : "andrew@gmail.com"
+        },
+        "passwd" : {
+          "type" : "string",
+          "example" : "123456!"
+        },
+        "username" : {
+          "type" : "string",
+          "example" : "앤드류"
+        },
+        "birthday" : {
+          "type" : "string",
+          "example" : "1989-12-28"
+        },
+        "gender" : {
+          "type" : "string",
+          "example" : "male"
+        },
+        "marketingEmailAgreement" : {
+          "type" : "boolean"
+        }
+      },
+      "xml" : {
+        "name" : "SignUpUser"
+      }
+    },
+    "User" : {
+      "type" : "object",
+      "properties" : {
+        "accessToken" : {
+          "type" : "string",
+          "example" : "abcd1111111"
+        },
+        "id" : {
+          "type" : "string",
+          "example" : "testId@gmail.com"
+        },
+        "username" : {
+          "type" : "string",
+          "example" : "윌리암"
+        },
+        "birthday" : {
+          "type" : "string",
+          "example" : "1989-12-28"
+        },
+        "phone" : {
+          "type" : "string",
+          "example" : "01067042018"
+        },
+        "marketingEmailAgreement" : {
+          "type" : "boolean"
+        },
+        "dataTransferAgreement" : {
+          "type" : "boolean"
+        },
+        "photoPushAgreement" : {
+          "type" : "boolean"
+        }
+      },
+      "xml" : {
+        "name" : "User"
+      }
+    },
+    "Photo" : {
+      "type" : "object",
+      "properties" : {
+        "latitude" : {
+          "type" : "number",
+          "example" : "123.123123"
+        },
+        "longitude" : {
+          "type" : "number",
+          "example" : "123.123123"
+        },
+        "altitude" : {
+          "type" : "number"
+        },
+        "atmosphericPressure" : {
+          "type" : "number"
+        },
+        "azimuth" : {
+          "type" : "number",
+          "example" : 65
+        },
+        "date" : {
+          "type" : "string",
+          "example" : "YYYY-MM-dd HH:mm:ss"
+        },
+        "photo" : {
+          "type" : "object"
+        }
+      },
+      "xml" : {
+        "name" : "WeatherStation"
+      }
+    },
+    "WeatherStation" : {
+      "type" : "object",
+      "properties" : {
+        "idx" : {
+          "type" : "string"
+        },
+        "latitude" : {
+          "type" : "number",
+          "example" : "123.123123"
+        },
+        "longitude" : {
+          "type" : "number",
+          "example" : "123.123123"
+        },
+        "date" : {
+          "type" : "string",
+          "example" : "YYYY-MM-dd HH:mm:ss"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "macAddress" : {
+          "type" : "boolean"
+        },
+        "accessStatus" : {
+          "type" : "boolean"
+        }
+      },
+      "xml" : {
+        "name" : "WeatherStation"
+      }
+    },
+    "WeatherStationRegistration" : {
+      "type" : "object",
+      "properties" : {
+        "latitude" : {
+          "type" : "number",
+          "example" : "123.123123"
+        },
+        "longitude" : {
+          "type" : "number",
+          "example" : "123.123123"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "macAddress" : {
+          "type" : "boolean"
+        }
+      },
+      "xml" : {
+        "name" : "WeatherStationRegistration"
+      }
+    },
+    "WeatherDeviceData" : {
+      "type" : "object",
+      "properties" : {
+        "latitude" : {
+          "type" : "number",
+          "example" : "123.123123"
+        },
+        "longitude" : {
+          "type" : "number",
+          "example" : "123.123123"
+        },
+        "atmosphericPressure" : {
+          "type" : "number"
+        },
+        "altitude" : {
+          "type" : "number"
+        },
+        "temperature" : {
+          "type" : "number"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "macAddress" : {
+          "type" : "boolean"
+        }
+      },
+      "xml" : {
+        "name" : "WeatherDeviceData"
+      }
+    },
+    "ErrorResponse" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "integer",
+          "format" : "int32"
+        },
+        "type" : {
+          "type" : "string"
+        },
+        "message" : {
+          "type" : "string"
+        },
+        "displayMessage" : {
+          "type" : "string"
+        }
+      }
+    },
+    "ApiResponse" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "integer",
+          "format" : "int32"
+        },
+        "type" : {
+          "type" : "string"
+        },
+        "message" : {
+          "type" : "string"
+        }
+      }
+    }
+  },
+  "host" : "virtserver.swaggerhub.com",
+  "basePath" : "/teamSix/Obsr/1.0.0",
+  "schemes" : [ "https" ]
+}
